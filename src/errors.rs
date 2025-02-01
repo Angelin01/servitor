@@ -20,7 +20,9 @@ impl From<zbus::Error> for ServiceError {
 			zbus::Error::MethodError(name, Some(msg), _) if is_invalid_unit(&name, &msg) => {
 				ServiceError::InvalidUnit
 			}
-			_ => ServiceError::UnexpectedError,
+			_ => {
+				ServiceError::UnexpectedError
+			}
 		}
 	}
 }
@@ -46,7 +48,9 @@ impl IntoResponse for ServiceError {
 }
 
 fn is_invalid_unit(name: &OwnedErrorName, msg: &str) -> bool {
-	name.as_str() == "org.freedesktop.DBus.Error.InvalidArgs"
-		&& msg.starts_with("Unit name")
-		&& msg.ends_with("is not valid.")
+	let name = name.as_str();
+	name == "org.freedesktop.systemd1.NoSuchUnit"
+		|| (name == "org.freedesktop.DBus.Error.InvalidArgs"
+			&& msg.starts_with("Unit name")
+			&& msg.ends_with("is not valid."))
 }

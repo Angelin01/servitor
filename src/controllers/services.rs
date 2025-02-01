@@ -16,6 +16,7 @@ pub fn create_router() -> Router<AppState> {
 		.route("/{service}/start", post(start_service))
 		.route("/{service}/stop", post(stop_service))
 		.route("/{service}/restart", post(restart_service))
+		.route("/{service}/reload", post(reload_service))
 		.route("/{service}/status", get(status_service))
 }
 
@@ -48,6 +49,20 @@ async fn restart_service(
 	state
 		.manager_proxy
 		.restart_unit(&service, "replace")
+		.await?;
+	Ok(Json(ServiceResponse {
+		service,
+		status: "restarting".into(),
+	}))
+}
+
+async fn reload_service(
+	State(state): State<AppState>,
+	Path(service): Path<String>,
+) -> Result<Json<ServiceResponse>, ServiceError> {
+	state
+		.manager_proxy
+		.reload_unit(&service, "replace")
 		.await?;
 	Ok(Json(ServiceResponse {
 		service,

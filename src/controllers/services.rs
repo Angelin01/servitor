@@ -2,22 +2,18 @@ use crate::errors::ServiceError;
 use crate::models::services::{ServiceResponse, ServiceStatusResponse};
 use crate::state::AppState;
 use crate::systemd::SystemdUnitProxy;
-use axum::{
-	Json, Router,
-	extract::Path,
-	extract::State,
-	response::Result,
-	routing::{get, post},
-};
+use axum::{Json, Router, extract::Path, extract::State, response::Result, routing::{get, post}, middleware};
 use chrono::DateTime;
+use crate::middleware::auth::auth_middleware;
 
-pub fn create_router() -> Router<AppState> {
+pub fn create_router(state: AppState) -> Router<AppState> {
 	Router::new()
 		.route("/{service}/start", post(start_service))
 		.route("/{service}/stop", post(stop_service))
 		.route("/{service}/restart", post(restart_service))
 		.route("/{service}/reload", post(reload_service))
 		.route("/{service}/status", get(status_service))
+		.layer(middleware::from_fn_with_state(state.clone(), auth_middleware))
 }
 
 async fn start_service(

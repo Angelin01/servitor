@@ -2,6 +2,7 @@ use crate::models::services::ErrorResponse;
 use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use axum_extra::typed_header::TypedHeaderRejection;
 use thiserror::Error;
 use zbus::names::OwnedErrorName;
 
@@ -11,7 +12,10 @@ pub enum ServiceError {
 	InvalidUnit,
 
 	#[error("The server encountered an unexpected error")]
-	UnexpectedError,
+	Unexpected,
+
+	#[error("Invalid authorization token")]
+	Unauthorized,
 }
 
 impl From<zbus::Error> for ServiceError {
@@ -20,10 +24,14 @@ impl From<zbus::Error> for ServiceError {
 			zbus::Error::MethodError(name, Some(msg), _) if is_invalid_unit(&name, &msg) => {
 				ServiceError::InvalidUnit
 			}
-			_ => {
-				ServiceError::UnexpectedError
-			}
+			_ => ServiceError::Unexpected,
 		}
+	}
+}
+
+impl From<TypedHeaderRejection> for ServiceError {
+	fn from(_: TypedHeaderRejection) -> Self {
+		ServiceError::Unauthorized
 	}
 }
 
@@ -36,8 +44,14 @@ impl IntoResponse for ServiceError {
 					error: self.to_string(),
 				}),
 			),
-			ServiceError::UnexpectedError => (
+			ServiceError::Unexpected => (
 				StatusCode::INTERNAL_SERVER_ERROR,
+				Json(ErrorResponse {
+					error: self.to_string(),
+				}),
+			),
+			ServiceError::Unauthorized => (
+				StatusCode::UNAUTHORIZED,
 				Json(ErrorResponse {
 					error: self.to_string(),
 				}),

@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = "0.8.1"
+axum = { version = "0.8.1", features = ["macros"]}
+axum-extra = { version = "0.10.0", default-features = false, features = ["typed-header"] }
 serde = { version = "1.0.217", features = ["derive"] }
 tokio = { version = "1.43.0" , features = ["rt-multi-thread", "parking_lot"]}
 zbus = { version = "5.3.1", default-features = false, features = ["tokio"]}

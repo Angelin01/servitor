@@ -7,7 +7,7 @@ mod controllers;
 mod models;
 mod systemd;
 mod state;
-
+mod errors;
 
 #[tokio::main]
 async fn main() {

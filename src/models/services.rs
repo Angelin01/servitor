@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -12,5 +13,10 @@ pub struct ServiceStatusResponse {
     pub state: String,
     pub sub_state: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub since: Option<String>,
+    pub since: Option<DateTime<Utc>>,
+}
+
+#[derive(Serialize)]
+pub struct ErrorResponse {
+    pub(crate) error: String,
 }

@@ -1,5 +1,5 @@
-use std::collections::HashSet;
 use anyhow::Result;
+use std::collections::HashSet;
 use std::env::var;
 
 pub struct Config {
@@ -14,13 +14,16 @@ impl Config {
 		let auth_enabled = var("SERV_AUTH_ENABLED").map_or(true, |v| v.parse().unwrap_or(true));
 		let auth_token = if auth_enabled {
 			Some(var("SERV_AUTH_TOKEN")?)
-		}
-		else {
+		} else {
 			None
 		};
-		let allowlist = var("SERV_ALLOWLIST")
-			.ok()
-			.map(|v| v.split(',').map(str::trim).map(String::from).collect());
+		let allowlist = var("SERV_ALLOWLIST").ok().map(|v| {
+			v.split(',')
+				.map(str::trim)
+				.filter(|s| !s.is_empty())
+				.map(String::from)
+				.collect()
+		});
 
 		Ok(Self {
 			bind_address,

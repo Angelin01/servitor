@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 use crate::errors::ServiceError;
 use crate::state::AppState;
 use anyhow::Result;
@@ -6,10 +7,12 @@ use axum::{
 	middleware::Next,
 	response::Response,
 };
+use axum::extract::ConnectInfo;
 use axum_extra::TypedHeader;
 use axum_extra::extract::WithRejection;
 use axum_extra::headers::Authorization;
 use axum_extra::headers::authorization::Bearer;
+use log::info;
 use password_hash::PasswordHash;
 
 pub fn read_password_hash(auth_token: Option<&str>) -> Result<Option<PasswordHash<'static>>> {
@@ -27,6 +30,7 @@ pub fn read_password_hash(auth_token: Option<&str>) -> Result<Option<PasswordHas
 
 pub async fn auth_middleware(
 	State(state): State<AppState>,
+	ConnectInfo(addr): ConnectInfo<SocketAddr>,
 	WithRejection(TypedHeader(Authorization(bearer)), _): WithRejection<
 		TypedHeader<Authorization<Bearer>>,
 		ServiceError,
@@ -42,6 +46,10 @@ pub async fn auth_middleware(
 
 	match verification_result {
 		Ok(_) => Ok(next.run(req).await),
-		Err(_) => Err(ServiceError::Unauthorized),
+		Err(e) => {
+			let ip = addr.ip().to_string();
+			info!("Denied authentication to IP {ip}: {e}");
+			Err(ServiceError::Unauthorized)
+		}
 	}
 }

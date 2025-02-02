@@ -3,6 +3,7 @@ use crate::middleware::auth;
 use anyhow::Result;
 use log::{error, info};
 use state::AppState;
+use std::net::SocketAddr;
 use std::sync::Arc;
 use systemd::SystemdManagerProxy;
 use tokio::net::TcpListener;
@@ -74,7 +75,12 @@ async fn main() -> Result<()> {
 	);
 
 	let app = controllers::create_router(state.clone()).with_state(state);
-	axum::serve(listener, app).await.map_err(|e| {
+	axum::serve(
+		listener,
+		app.into_make_service_with_connect_info::<SocketAddr>(),
+	)
+	.await
+	.map_err(|e| {
 		error!("Server encountered an error: {e}");
 		e
 	})?;

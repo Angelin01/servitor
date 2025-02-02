@@ -7,6 +7,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use systemd::SystemdManagerProxy;
 use tokio::net::TcpListener;
+use tracing_subscriber::EnvFilter;
 use zbus::Connection;
 
 mod config;
@@ -19,7 +20,9 @@ mod systemd;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-	tracing_subscriber::fmt::init();
+	tracing_subscriber::fmt()
+		.with_env_filter(EnvFilter::from_env("SERV_LOG_LEVEL"))
+		.init();
 
 	info!("Starting Servitor...");
 

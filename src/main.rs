@@ -1,5 +1,3 @@
-#![feature(trivial_bounds)]
-
 use crate::config::Config;
 use anyhow::Result;
 use state::AppState;

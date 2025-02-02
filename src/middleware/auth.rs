@@ -15,18 +15,11 @@ use axum_extra::headers::authorization::Bearer;
 use log::info;
 use password_hash::PasswordHash;
 
-pub fn read_password_hash(auth_token: Option<&str>) -> Result<Option<PasswordHash<'static>>> {
-	match auth_token {
-		None => Ok(None),
-		Some(t) => {
-			let static_token = Box::leak(t.to_owned().into_boxed_str());
-			PasswordHash::new(static_token)
-				.map(Some)
-				.map_err(|e| anyhow::Error::from(e))
-		}
-	}
+pub fn parse_token_hash(auth_token: &str) -> Result<PasswordHash<'static>> {
+	let static_token = Box::leak(auth_token.to_owned().into_boxed_str());
+	PasswordHash::new(static_token)
+		.map_err(|e| anyhow::Error::from(e))
 }
-
 
 pub async fn auth_middleware(
 	State(state): State<AppState>,

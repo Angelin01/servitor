@@ -7,6 +7,7 @@ use std::sync::Arc;
 use systemd::SystemdManagerProxy;
 use tokio::net::TcpListener;
 use zbus::Connection;
+use crate::middleware::auth;
 
 mod config;
 mod controllers;
@@ -19,16 +20,19 @@ mod systemd;
 #[tokio::main]
 async fn main() -> Result<()> {
 	// TODO: prettier error messages with error!
+	let config = Config::from_envs()?;
 	let dbus_conn = Connection::session().await?;
 	let manager_proxy = SystemdManagerProxy::new(&dbus_conn).await?;
-	let config = Arc::new(Config::from_envs()?);
 	let listener = TcpListener::bind(config.bind_address.as_str()).await?;
 
-	let state = AppState {
+	let password_hash = auth::read_password_hash(config.auth_token.as_deref())?
+		.map(Arc::new);
+
+	let state = AppState::new(
 		manager_proxy,
 		dbus_conn,
-		config,
-	};
+		password_hash,
+	);
 
 	let app = controllers::create_router(state.clone()).with_state(state);
 	println!("Servitor running");

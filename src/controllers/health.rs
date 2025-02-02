@@ -3,7 +3,7 @@ use crate::state::AppState;
 use axum::routing::get;
 use axum::{Json, Router};
 
-pub fn create_router() -> Router<AppState> {
+pub fn create_router<'a>() -> Router<AppState> {
 	Router::new().route("/health", get(health_check))
 }
 

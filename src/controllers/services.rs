@@ -13,7 +13,7 @@ pub fn create_router(state: AppState) -> Router<AppState> {
 		.route("/{service}/restart", post(restart_service))
 		.route("/{service}/reload", post(reload_service))
 		.route("/{service}/status", get(status_service));
-	if state.config.auth_token.is_some() {
+	if state.has_auth() {
 		router = router.layer(middleware::from_fn_with_state(state.clone(), auth_middleware));
 	}
 

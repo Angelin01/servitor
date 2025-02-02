@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use crate::systemd::SystemdManagerProxy;
 use anyhow::Result;
 use axum_extra::headers::authorization::Bearer;
@@ -14,6 +15,7 @@ pub struct AppState {
 	pub manager_proxy: SystemdManagerProxy<'static>,
 	pub dbus_conn: Connection,
 	password_hash: Option<Arc<PasswordHash<'static>>>,
+	pub allowed_services: Option<HashSet<String>>,
 }
 
 impl AppState {
@@ -21,11 +23,13 @@ impl AppState {
 		manager_proxy: SystemdManagerProxy<'static>,
 		dbus_conn: Connection,
 		password_hash: Option<Arc<PasswordHash<'static>>>,
+		allowed_services: Option<HashSet<String>>,
 	) -> Self {
 		Self {
 			manager_proxy,
 			dbus_conn,
 			password_hash,
+			allowed_services,
 		}
 	}
 

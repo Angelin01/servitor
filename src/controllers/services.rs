@@ -24,6 +24,8 @@ async fn start_service(
 	State(state): State<AppState>,
 	Path(service): Path<String>,
 ) -> Result<Json<ServiceResponse>, ServiceError> {
+	ensure_service_allowed(&state, &service)?;
+
 	state.manager_proxy.start_unit(&service, "replace").await?;
 	Ok(Json(ServiceResponse {
 		service,
@@ -35,6 +37,8 @@ async fn stop_service(
 	State(state): State<AppState>,
 	Path(service): Path<String>,
 ) -> Result<Json<ServiceResponse>, ServiceError> {
+	ensure_service_allowed(&state, &service)?;
+
 	state.manager_proxy.stop_unit(&service, "replace").await?;
 	Ok(Json(ServiceResponse {
 		service,
@@ -46,6 +50,8 @@ async fn restart_service(
 	State(state): State<AppState>,
 	Path(service): Path<String>,
 ) -> Result<Json<ServiceResponse>, ServiceError> {
+	ensure_service_allowed(&state, &service)?;
+
 	state
 		.manager_proxy
 		.restart_unit(&service, "replace")
@@ -60,6 +66,8 @@ async fn reload_service(
 	State(state): State<AppState>,
 	Path(service): Path<String>,
 ) -> Result<Json<ServiceResponse>, ServiceError> {
+	ensure_service_allowed(&state, &service)?;
+
 	state
 		.manager_proxy
 		.reload_unit(&service, "replace")
@@ -74,6 +82,8 @@ async fn status_service(
 	State(state): State<AppState>,
 	Path(service): Path<String>,
 ) -> Result<Json<ServiceStatusResponse>, ServiceError> {
+	ensure_service_allowed(&state, &service)?;
+
 	let unit_path = state.manager_proxy.get_unit(&service.as_str()).await?;
 	let unit_proxy = SystemdUnitProxy::new(&state.dbus_conn, unit_path.to_string()).await?;
 
@@ -92,4 +102,22 @@ async fn status_service(
 		sub_state,
 		since,
 	}))
+}
+
+fn ensure_service_allowed(state: &AppState, service: &str) -> Result<(), ServiceError> {
+	if service.is_empty() {
+		return Err(ServiceError::InvalidUnit)
+	}
+
+	match &state.allowed_services {
+		None => Ok(()),
+		Some(a) => {
+			if a.contains(service) {
+				Ok(())
+			}
+			else {
+				Err(ServiceError::InvalidUnit)
+			}
+		},
+	}
 }

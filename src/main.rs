@@ -32,7 +32,10 @@ async fn main() -> Result<()> {
 		manager_proxy,
 		dbus_conn,
 		password_hash,
+		config.allowlist.clone(),
 	);
+
+	drop(config.allowlist);
 
 	let app = controllers::create_router(state.clone()).with_state(state);
 	println!("Servitor running");

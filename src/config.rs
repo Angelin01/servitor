@@ -1,10 +1,11 @@
+use std::collections::HashSet;
 use anyhow::Result;
 use std::env::var;
 
 pub struct Config {
 	pub bind_address: String,
 	pub auth_token: Option<String>,
-	pub allowlist: Option<Vec<String>>,
+	pub allowlist: Option<HashSet<String>>,
 }
 
 impl Config {

@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::config::{Config, DbusScope};
 use crate::middleware::auth;
 use anyhow::Result;
 use log::{error, info};
@@ -31,8 +31,18 @@ async fn main() -> Result<()> {
 		e
 	})?;
 
-	let dbus_conn = Connection::session().await.map_err(|e| {
-		error!("Could not establish a D-Bus session connection: {e}");
+	let dbus_conn = match config.dbus_scope {
+		DbusScope::Session => {
+			info!("Using D-Bus session connection.");
+			Connection::session().await
+		}
+		DbusScope::System => {
+			info!("Using D-Bus system connection.");
+			Connection::system().await
+		}
+	}
+	.map_err(|e| {
+		error!("Could not establish a D-Bus connection: {e}");
 		e
 	})?;
 

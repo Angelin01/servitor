@@ -19,7 +19,7 @@ pub fn read_password_hash(auth_token: Option<&str>) -> Result<Option<PasswordHas
 			let static_token = Box::leak(t.to_owned().into_boxed_str());
 			PasswordHash::new(static_token)
 				.map(Some)
-				.map_err(|e| anyhow::anyhow!("Failed to parse password hash: {}", e))
+				.map_err(|e| anyhow::Error::from(e))
 		}
 	}
 }

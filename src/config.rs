@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use std::collections::HashSet;
 use std::env::var;
 
@@ -13,7 +13,9 @@ impl Config {
 		let bind_address = var("SERV_BIND_ADDRESS").unwrap_or("127.0.0.1:8008".into());
 		let auth_enabled = var("SERV_AUTH_ENABLED").map_or(true, |v| v.parse().unwrap_or(true));
 		let auth_token = if auth_enabled {
-			Some(var("SERV_AUTH_TOKEN")?)
+			Some(var("SERV_AUTH_TOKEN").map_err(|_| {
+				anyhow!("Auth is enabled and failed to read SERV_AUTH_TOKEN env var")
+			})?)
 		} else {
 			None
 		};

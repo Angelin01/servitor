@@ -103,7 +103,7 @@ async fn reload_service(
 
 	Ok(Json(ServiceResponse {
 		service,
-		status: "restarting".into(),
+		status: "reloading".into(),
 	}))
 }
 

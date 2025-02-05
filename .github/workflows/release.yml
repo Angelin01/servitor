@@ -34,8 +34,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get install -yqq crossbuild-essential-arm64 crossbuild-essential-armhf musl-tools
-
-          cat > ~/.cargo/config.toml <<EOF
+          cat >> ~/.cargo/config.toml <<EOF
           [target.aarch64-unknown-linux-gnu]
           linker = "aarch64-linux-gnu-gcc"
           [target.aarch64-unknown-linux-musl]
@@ -47,6 +46,14 @@ jobs:
           EOF
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          cache-targets: "true"
+          cache-all-crates: "true"
+          cache-bin: "true"
+          cache-on-failure: "true"
+
+      - name: Install rust target
+        run: rustup target add ${{ matrix.target }}
 
       - name: Install cargo-edit
         run: cargo install -f --no-default-features --features "set-version" cargo-edit
@@ -54,21 +61,17 @@ jobs:
       - name: Set version
         run: cargo set-version ${{ steps.get_version.outputs.VERSION }}
 
-      - name: Build binary
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --locked --target ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }}
 
       - name: Package
         run: |
-          tagName=${GITHUB_REF#refs/tags/v}
-          executableName=gjallarbot
+          executableName=servitor
           mkdir -p dist
-          mv target/$TARGET/release/$executableName dist/${executableName}-v${tagName}-${TARGET}
+          mv target/${{ matrix.target }}/release/$executableName dist/${executableName}-${VERSION}-${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         with:
-          name: binary-${{ matrix.TARGET }}
+          name: binary-${{ matrix.target }}
           path: dist/
           if-no-files-found: error
 
@@ -79,6 +82,9 @@ jobs:
       contents: read
       packages: write
     steps:
+      - name: Lowercase IMAGE_NAME
+        run: echo "IMAGE_NAME=${IMAGE_NAME,,}" >> $GITHUB_ENV
+
       - uses: actions/checkout@v4
 
       - name: Get version from tag
@@ -102,8 +108,10 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           build-args: |
             VERSION=${{ steps.get_version.outputs.VERSION }}
           tags: |
@@ -121,6 +129,9 @@ jobs:
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
+      - name: Lowercase IMAGE_NAME
+        run: echo "IMAGE_NAME=${IMAGE_NAME,,}" >> $GITHUB_ENV
+
       - name: Download Release Binaries
         uses: actions/download-artifact@v4
         with:
@@ -136,7 +147,8 @@ jobs:
 
             Docker images are available at:
             ```bash
-            docker pull ghcr.io/${{ github.repository }}:${{ steps.get_version.outputs.VERSION }}
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.get_version.outputs.VERSION }}
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ```
           generate_release_notes: true
           files: ./dist/*

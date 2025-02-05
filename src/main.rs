@@ -31,7 +31,9 @@ async fn main() -> Result<()> {
 			.from_env_lossy())
 		.init();
 
-	info!("Starting Servitor...");
+	let name = env!("CARGO_PKG_NAME");
+	let version = env!("CARGO_PKG_VERSION");
+	info!("Starting {name} version v{version}...");
 
 	let config = Config::from_envs().map_err(|e| {
 		error!("Failed to load configuration: {e}");

@@ -1,0 +1,20 @@
+name: Main
+
+on:
+  pull_request:
+    branches: ["master"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  tests:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update Toolchain
+        run: rustup update nightly && rustup default nightly # Until edition 2024 becomes stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo --version && cargo build --locked
